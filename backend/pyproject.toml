@@ -8,20 +8,19 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fastapi = {extras = ["uvicorn"], version = "^0.111.0"}
-pydantic-settings = "^2.3.3"
-aiohttp = "^3.9.5"
 dependency-injector = "^4.41.0"
+fastapi = {extras = ["uvicorn"], version = "^0.111.0"}
+pydantic = "^2.7.4"
+pydantic-settings = "^2.3.3"
 pytest = "^8.2.2"
 pytest-asyncio = "^0.23.7"
-pydantic = "^2.7.4"
 aiofiles = "^24.1.0"
 
 [tool.poetry.dev-dependencies]
 poethepoet = "^0.26.1"
 
 [tool.poe.tasks]
-start = { shell = "cd src && uvicorn main:app --reload" }
+start = { shell = "cd src && uvicorn main:app --reload --port 8000 --host 0.0.0.0" }
 test  = { shell = "cd tests && pytest -s" }
 
 [tool.pytest.ini_options]

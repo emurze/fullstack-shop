@@ -11,9 +11,7 @@ const PizzaList = () => {
             .then((resp) => {
                 setPizzas(resp)
             })
-    }, [])
-
-    console.log(pizzas)
+    }, []) // FC runs when we firstly were showed on the page.
 
     return (
         <>

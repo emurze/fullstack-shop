@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  api:
+    build: backend
+    container_name: 'pizza.api'
+    image: 'pizza.api:1'
+    networks:
+      - pizza.backend
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./backend/src:/service/src
+      - ./backend/tests:/service/tests
+    restart: unless-stopped
+
+networks:
+  pizza.backend:
