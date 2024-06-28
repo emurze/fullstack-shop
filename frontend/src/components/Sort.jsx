@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 
 const Sort = () => {
     const [isVisible, setIsVisible] = useState(false)
@@ -9,6 +9,17 @@ const Sort = () => {
         setActiveIndex(i)
         setIsVisible(false)
     }
+
+    useEffect(() => {
+        console.log("DID MOUNT")
+        return () => {
+            console.log("DID UNMOUNT")
+        }
+    }, [])
+
+    useEffect(() => {
+        console.log("DID UPDATE")
+    }) // Did Mount
 
     return (
         <div className="sort">
