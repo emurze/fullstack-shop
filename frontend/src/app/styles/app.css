@@ -49,10 +49,23 @@ a {
   border-bottom: 1px solid #f6f6f6;
   padding: 40px 0;
 }
+@media (max-width: 640px) {
+  .header {
+    padding: 40px 0 18px 0;
+  }
+}
 .header .container {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+@media (max-width: 640px) {
+  .header .container {
+    flex-direction: column;
+  }
+  .header .container .header__cart {
+    margin-top: 22px;
+  }
 }
 .header__logo {
   display: flex;
@@ -196,6 +209,8 @@ a {
 
 .categories ul {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .categories ul li {
   background-color: #f9f9f9;
@@ -273,8 +288,9 @@ a {
   text-align: center;
   margin-bottom: 65px;
 }
-.pizza-block:not(:nth-of-type(4n)) {
-  margin-right: 35px;
+.pizza-block-wrapper {
+  display: flex;
+  justify-content: center;
 }
 .pizza-block__image {
   width: 260px;
@@ -337,29 +353,61 @@ body {
 }
 
 .wrapper {
-  width: calc(100vw - 100px);
+  width: calc(100vw - 60px);
   height: 100%;
   background-color: #fff;
   margin: 50px auto;
-  border-radius: 10px;
+  border-radius: 15px;
   max-width: 1400px;
 }
 
 .content {
   padding: 40px 0;
 }
+@media (max-width: 640px) {
+  .content {
+    padding: 0;
+  }
+}
 .content__title {
   margin: 35px 0;
 }
 .content__items {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  grid-column-gap: 30px;
+}
+@media (max-width: 1400px) {
+  .content__items {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 1060px) {
+  .content__items {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 730px) {
+  .content__items {
+    grid-template-columns: 1fr;
+  }
 }
 .content__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+@media (max-width: 1260px) {
+  .content__top {
+    flex-direction: column;
+  }
+  .content__top .categories {
+    margin-bottom: 25px;
+  }
+  .content__top .categories ul li {
+    margin: 5px 0;
+  }
 }
 
 .container {
