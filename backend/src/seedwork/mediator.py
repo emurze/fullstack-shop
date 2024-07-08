@@ -17,11 +17,7 @@ from seedwork.uows import IUnitOfWork
 Command: TypeAlias = Any
 
 
-def command_handler[TF: Callable](func: TF) -> TF:
-    func._is_command_handler = True
-    return func
-
-
+# TODO: provide behavior for staticmethods
 def get_first_argument_annotation(func: Callable) -> Any:
     signature = inspect.signature(func)
     parameters = list(signature.parameters.values())
@@ -52,9 +48,9 @@ class Mediator:
     def register_command(
         self,
         command_type: type[Command],
-        _command_handler: Callable,
+        command_handler: Callable,
     ) -> None:
-        self.command_map[command_type] = _command_handler
+        self.command_map[command_type] = command_handler
 
     def register_service_commands(
         self,
@@ -67,8 +63,8 @@ class Mediator:
 
         methods = inspect.getmembers(service, inspect.ismethod)
 
-        for _, method in methods:
-            if not hasattr(method, "_is_command_handler"):
+        for method_name, method in methods:
+            if method_name.startswith("_"):
                 continue
 
             command_type = get_first_argument_annotation(method)
@@ -82,4 +78,6 @@ class Mediator:
             raise CommandHandlerNotRegisteredException(command_type)
 
         with self.uow:
-            return handler(command)
+            res = handler(command)
+            self.uow.commit()
+            return res

@@ -5,12 +5,13 @@ from seedwork.models import AggregateRoot as AgRoot
 
 class IGenericRepository[Model: AgRoot, ModelId: int](metaclass=abc.ABCMeta):
     model_class: Model
+    seen: set
 
     @abc.abstractmethod
     def add(self, model: Model) -> ModelId: ...
 
     @abc.abstractmethod
-    def delete(self, model: Model) -> None: ...
+    def delete_by_id(self, ido: ModelId) -> None: ...
 
     @abc.abstractmethod
     def get_by_id(
@@ -26,12 +27,15 @@ class IGenericRepository[Model: AgRoot, ModelId: int](metaclass=abc.ABCMeta):
 class GenericRepository[Model: AgRoot, ModelId: int](IGenericRepository):
     model_class: Model
 
+    def __init__(self) -> None:
+        self.seen = set()
+
     def add(self, model: Model) -> ModelId:
         model.save()
         return model.id
 
-    def delete(self, model: Model) -> None:
-        model.delete()
+    def delete_by_id(self, ido: ModelId) -> None:
+        self.model_class.objects.filter(id=ido).delete()
 
     def get_by_id(
         self,
@@ -43,7 +47,9 @@ class GenericRepository[Model: AgRoot, ModelId: int](IGenericRepository):
         if for_update:
             query = query.select_for_update()
 
-        return query.filter(id=ido).first()
+        model = query.filter(id=ido).first()
+        self.seen.add(model)
+        return model
 
     def count(self) -> int:
         return self.model_class.objects.count()

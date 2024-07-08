@@ -47,11 +47,11 @@ class TestProductRepository:
 
         assert products_quantity == 2
 
-    def test_can_delete(self) -> None:
+    def test_can_delete_by_id(self) -> None:
         title = self.faker.text(max_nb_chars=50)
         product = Product(title=title)
         self.products.add(product)
 
-        self.products.delete(product)
+        self.products.delete_by_id(product.id)
 
         assert self.products.get_by_id(product.id) is None

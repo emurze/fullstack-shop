@@ -15,8 +15,11 @@ def singleton_provider(fn: Callable) -> Callable:
 
 class MainModule(Module):
     def configure(self, binder: Binder) -> None:
-        binder.bind(IUnitOfWork, to=DjangoUnitOfWork, scope=singleton)
-        binder.bind(IProductRepository, ProductRepository, scope=singleton)
+        binder.bind(IProductRepository, to=ProductRepository, scope=singleton)
+
+    @singleton_provider
+    def provider_uow(self, product_repo: IProductRepository) -> IUnitOfWork:
+        return DjangoUnitOfWork(product_repo)
 
     @singleton_provider
     def provide_mediator(

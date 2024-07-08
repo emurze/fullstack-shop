@@ -7,7 +7,9 @@ from seedwork.models import AggregateRoot
 
 class Product(AggregateRoot):
     title = models.CharField(max_length=255)
-    slug = AutoSlugField(unique=True, db_index=True, populate_from="title")
+    slug = AutoSlugField(
+        unique=True, db_index=True, populate_from="title"
+    )  # TODO: Remove lib set trigger
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = Manager()
@@ -15,7 +17,7 @@ class Product(AggregateRoot):
     class Meta:
         ordering = ["-created_at"]
 
-    def change_title(self, title: str) -> None:
+    def update(self, title: str) -> None:
         self.title = title
 
     def __str__(self) -> str:

@@ -11,14 +11,14 @@ from seedwork.exceptions import (
     MissingFirstArgumentAnnotationException,
     CommandIsNotDataClassException,
 )
-from seedwork.mediator import Mediator, command_handler
+from seedwork.mediator import Mediator
 from seedwork.uows import DjangoUnitOfWork
 
 
 @dataclass(frozen=True)
 class IChatService:
-    @command_handler
-    def add_message_to_client(self, command: Any) -> None:
+    @staticmethod
+    def add_message_to_client(command: Any) -> None:
         print(f"Add message <{command}> to a client")
 
 
@@ -30,15 +30,15 @@ class TNotificationService:
     def __init__(self) -> None:
         pass
 
-    @command_handler
-    def notify_client_about_credentials(self) -> None:
+    @staticmethod
+    def notify_client_about_credentials() -> None:
         print("Notify client about credentials")
 
 
 @dataclass(frozen=True)
 class IDeliveryService:
-    @command_handler
-    def notify_client_about_credentials(self, command) -> None:
+    @staticmethod
+    def notify_client_about_credentials(command) -> None:
         print(f"Deliver things to a client from {command=}")
 
 
@@ -56,12 +56,12 @@ class TUpdateProductCommand:
 class TProductService:
     mediator: Mediator
 
-    @command_handler
-    def create_product(self, command: TCreateProductCommand) -> str:
+    @staticmethod
+    def create_product(command: TCreateProductCommand) -> str:
         return f"Product {command.title} created"
 
-    @command_handler
-    def update_product(self, command: TUpdateProductCommand) -> str:
+    @staticmethod
+    def update_product(command: TUpdateProductCommand) -> str:
         return f"Product {command.title} updated"
 
 
@@ -75,7 +75,6 @@ class TCreateOrderCommand:
 class TOrderService:
     mediator: Mediator
 
-    @command_handler
     def create_order(self, command: TCreateOrderCommand) -> tuple[str, str]:
         res = self.mediator.handle(TCreateProductCommand(title=command.name))
         return res, f"Order {command.name} created"
@@ -106,6 +105,7 @@ class TestMediator:
         assert res == f"Product {command.title} created"
         assert res2 == f"Product {command2.title} updated"
 
+    @pytest.mark.marked
     def test_can_register_two_services(self) -> None:
         self.mediator.register_service_commands(TProductService)
         self.mediator.register_service_commands(TOrderService)

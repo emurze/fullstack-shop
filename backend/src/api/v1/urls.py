@@ -1,7 +1,17 @@
 from django.urls import path, include
 
-from api.v1.products.router import products_router
+
+from rest_framework.routers import SimpleRouter
+
+from api.v1.products.views import ProductModelViewSet
+
+main_router = SimpleRouter()
+main_router.register(
+    prefix="products",
+    viewset=ProductModelViewSet,
+    basename="products",
+)
 
 urlpatterns = [
-    path("", include(products_router.urls)),
+    path("", include(main_router.urls)),
 ]
