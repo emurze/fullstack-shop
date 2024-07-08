@@ -1,0 +1,96 @@
+version: "3.8"
+services:
+  db:
+    image: 'postgres:16'
+    container_name: $APP_NAME.db
+    env_file: .env
+    networks:
+      - backend
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    restart: unless-stopped
+
+  message_broker:
+    image: rabbitmq:3.9.29-management-alpine
+    container_name: $APP_NAME.rabbitmq
+    env_file: .env
+    networks:
+      - backend
+    ports:
+      - '15672:15672'
+    volumes:
+      - message_broker_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+#  api:
+#    build: .
+#    container_name: '$APP_NAME.api'
+#    image: '${APP_NAME}.api:1'
+#    env_file: .env
+#    networks:
+#      - $APP_NAME.backend
+#    ports:
+#      - '8081:8080'
+#    volumes:
+#      - ./src:/service/src
+#      - $APP_NAME.app_static:/service/src/shared/infra/django/data/static
+#      - $APP_NAME.app_media:/service/src/shared/infra/django/data/media
+#    restart: unless-stopped
+#    depends_on:
+#      - db with healthcheck
+
+#  web_server:
+#    image: 'nginx:alpine3.18'
+#    container_name: '$APP_NAME.web_server'
+#    networks:
+#      - $APP_NAME.backend
+#    volumes:
+#      - ./src/shared/infra/nginx/conf/default.conf:/etc/nginx/nginx.conf
+#      - $APP_NAME.app_static:/srv/static
+#      - $APP_NAME.app_media:/srv/media
+#    ports:
+#      - '81:80'
+#    restart: unless-stopped
+#    depends_on:
+#      - api
+
+#  cache:
+#    image: 'redis:7'
+#    container_name: '$APP_NAME.cache'
+#    command: redis-server /etc/redis.conf
+#    networks:
+#      - $APP_NAME.backend
+#    volumes:
+#      - $APP_NAME.cache_data:/data
+#      - ./src/shared/infra/redis/cache/conf/redis.conf:/etc/redis.conf
+#    restart: unless-stopped
+
+#  worker1:
+#    build: .
+#    container_name: '$APP_NAME.worker1'
+#    image: '$APP_NAME.api:1'
+#    command: >
+#      sh -c "cd src &&
+#             poetry run celery -A worker.app worker --loglevel=INFO"
+#    networks:
+#      - $APP_NAME.backend
+#    volumes:
+#      - ./src:/service/src
+#      - $APP_NAME.app_static:/service/src/shared/infra/django/data/static
+#      - $APP_NAME.app_media:/service/src/shared/infra/django/data/media
+#    env_file: .env/.$APP_NAME.env
+#    restart: unless-stopped
+#    depends_on:
+#      - pubsub
+
+networks:
+  backend:
+
+volumes:
+  postgres_data:
+  message_broker_data:
+#  $APP_NAME.cache_data:
+#  $APP_NAME.app_static:
+#  $APP_NAME.app_media:
