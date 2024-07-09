@@ -1,4 +1,5 @@
 import abc
+import logging
 from typing import Self
 
 from django.db import transaction
@@ -22,6 +23,7 @@ class IUnitOfWork(metaclass=abc.ABCMeta):
 
 class DjangoUnitOfWork(IUnitOfWork):  # TODO: add logging
     def __init__(self, *repositories: IGenericRepository) -> None:
+        self.lg = logging.getLogger()
         self.repositories = repositories
 
     def __enter__(self) -> Self:
@@ -38,8 +40,10 @@ class DjangoUnitOfWork(IUnitOfWork):  # TODO: add logging
                 model.save()
 
     def commit(self) -> None:
+        self.lg.debug("COMMIT")
         self._persist()
         transaction.commit()
 
     def rollback(self):
+        self.lg.debug("ROLLBACK")
         transaction.rollback()

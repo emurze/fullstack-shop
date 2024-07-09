@@ -1,4 +1,5 @@
 import pytest
+from django.core import mail
 from faker import Faker
 
 from apps.products.repositories import IProductRepository
@@ -23,12 +24,20 @@ class TestProductService:
     ) -> None:
         title = self.faker.text(max_nb_chars=50)
         command = CreateProductCommand(title=title)
-
         product_id = mediator.handle(command)
 
         product = product_repo.get_by_id(product_id)
+
         assert product.id == product_id
         assert product.title == title
+
+    def test_create_can_call_send_message(self, mediator: Mediator) -> None:
+        title = self.faker.text(max_nb_chars=50)
+        command = CreateProductCommand(title=title)
+        mediator.handle(command)
+
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].subject == "Subject here"
 
     def test_can_delete(
         self,

@@ -3,3 +3,4 @@ from .auth import *
 from .base import *
 from .db import *
 from .templates import *
+from .logging import *

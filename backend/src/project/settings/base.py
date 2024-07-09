@@ -56,3 +56,5 @@ STATIC_URL = "static/"
 STATIC_ROOT = Path(BASE_DIR.parent, STATIC_URL)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DSN")

@@ -22,7 +22,6 @@ class ProductFilter(django_filters.FilterSet):
         )
 
 
-#
 # class CategoryFilter(django_filters.FilterSet):
 #     title = django_filters.DateFilter(field_name="title")
 #

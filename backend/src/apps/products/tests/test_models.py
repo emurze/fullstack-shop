@@ -12,8 +12,7 @@ class TestBusinessModels:
     @pytest.mark.django_db
     def test_create_product_model(self) -> None:
         title = self.faker.text(max_nb_chars=50)
-
         product = Product.objects.create(title=title)
 
         assert product.title
-        assert product.slug == slugify(title)
+        assert product.slug == slugify(f"{title}-{product.id}")

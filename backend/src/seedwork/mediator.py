@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import Callable
-from dataclasses import dataclass, field, is_dataclass
+from dataclasses import is_dataclass
 from typing import Any, TypeAlias
 
 from injector import Injector, inject
@@ -17,7 +17,12 @@ from seedwork.uows import IUnitOfWork
 Command: TypeAlias = Any
 
 
-# TODO: provide behavior for staticmethods
+def command_handler[TF](func: TF) -> TF:
+    func._is_command_handler = True
+    return func
+
+
+# TODO: provide behavior for static methods
 def get_first_argument_annotation(func: Callable) -> Any:
     signature = inspect.signature(func)
     parameters = list(signature.parameters.values())
@@ -39,23 +44,26 @@ def get_first_argument_annotation(func: Callable) -> Any:
     return annotation
 
 
-@dataclass(frozen=True)
-class Mediator:
-    uow: IUnitOfWork
+class BasicMediator:
     container: Injector
-    command_map: dict[type[Command], Callable] = field(default_factory=dict)
+    command_map: dict[type[Command], Callable]
+
+    def __init__(
+        self,
+        container: Injector,
+        command_map: dict | None = None,
+    ) -> None:
+        self.container = container
+        self.command_map = {} if command_map is None else command_map
 
     def register_command(
         self,
         command_type: type[Command],
-        command_handler: Callable,
+        _command_handler: Callable,
     ) -> None:
-        self.command_map[command_type] = command_handler
+        self.command_map[command_type] = _command_handler
 
-    def register_service_commands(
-        self,
-        service_type: Any,
-    ) -> None:
+    def register_service_commands(self, service_type: Any) -> None:
         try:
             service = self.container.get(inject(service_type))
         except AttributeError:
@@ -63,12 +71,16 @@ class Mediator:
 
         methods = inspect.getmembers(service, inspect.ismethod)
 
-        for method_name, method in methods:
-            if method_name.startswith("_"):
+        for _, method in methods:
+            if not hasattr(method, "_is_command_handler"):
                 continue
 
             command_type = get_first_argument_annotation(method)
             self.register_command(command_type, method)
+
+    @staticmethod
+    def execute_handler(handler: Callable, command: Command) -> Any:
+        return handler(command)
 
     def handle(self, command: Command) -> Any:
         command_type = type(command)
@@ -77,6 +89,15 @@ class Mediator:
         if not handler:
             raise CommandHandlerNotRegisteredException(command_type)
 
+        return self.execute_handler(handler, command)
+
+
+class Mediator(BasicMediator):
+    def __init__(self, container: Injector, uow: IUnitOfWork) -> None:
+        super().__init__(container)
+        self.uow = uow
+
+    def execute_handler(self, handler: Callable, command: Command) -> Any:
         with self.uow:
             res = handler(command)
             self.uow.commit()
