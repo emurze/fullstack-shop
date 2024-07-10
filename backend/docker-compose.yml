@@ -12,16 +12,26 @@ services:
       - '5432:5432'
     restart: unless-stopped
 
-  message_broker:
+  broker:
     image: rabbitmq:3.9.29-management-alpine
     container_name: $APP_NAME.rabbitmq
     env_file: .env
     networks:
       - backend
     ports:
+      - '5672:5672'
       - '15672:15672'
     volumes:
-      - message_broker_data:/var/lib/rabbitmq
+      - broker_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+  cache:
+    image: redis:7
+    container_name: $APP_NAME.cache
+    networks:
+      - backend
+    volumes:
+      - cache_data:/data
     restart: unless-stopped
 
 #  api:
@@ -90,7 +100,7 @@ networks:
 
 volumes:
   postgres_data:
-  message_broker_data:
-#  $APP_NAME.cache_data:
+  broker_data:
+  cache_data:
 #  $APP_NAME.app_static:
 #  $APP_NAME.app_media:

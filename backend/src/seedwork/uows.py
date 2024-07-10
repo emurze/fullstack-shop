@@ -15,15 +15,18 @@ class IUnitOfWork(metaclass=abc.ABCMeta):
     def __exit__(self, *args) -> None: ...
 
     @abc.abstractmethod
+    def persist(self) -> None: ...
+
+    @abc.abstractmethod
     def commit(self) -> None: ...
 
     @abc.abstractmethod
     def rollback(self) -> None: ...
 
 
-class DjangoUnitOfWork(IUnitOfWork):  # TODO: add logging
+class DjangoUnitOfWork(IUnitOfWork):
     def __init__(self, *repositories: IGenericRepository) -> None:
-        self.lg = logging.getLogger()
+        self.logger = logging.getLogger()
         self.repositories = repositories
 
     def __enter__(self) -> Self:
@@ -34,16 +37,16 @@ class DjangoUnitOfWork(IUnitOfWork):  # TODO: add logging
         self.rollback()
         transaction.set_autocommit(True)
 
-    def _persist(self) -> None:
+    def persist(self) -> None:
         for repo in self.repositories:
             for model in repo.seen:
                 model.save()
 
     def commit(self) -> None:
-        self.lg.debug("COMMIT")
-        self._persist()
+        self.persist()
+        self.logger.debug("COMMIT")
         transaction.commit()
 
     def rollback(self):
-        self.lg.debug("ROLLBACK")
+        self.logger.debug("ROLLBACK")
         transaction.rollback()

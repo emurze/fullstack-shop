@@ -8,10 +8,15 @@ class INotificationAdapter(abc.ABC):
     @abc.abstractmethod
     def send_invite_to_client(self, message: str) -> None: ...
 
-
-class NotificationAdapter(INotificationAdapter):
-    def send_invite_to_client(self, message: str) -> None:
-        send_invite_to_client.delay(message)
+    # IN MEDIATOR
+    # class NotificationAdapter(INotificationAdapter):
+    #     def send_invite_to_client(self, message: str) -> None:
+    #         send_invite_to_client.delay(message)
+    #
+    #
+    # class DummyNotificationAdapter(INotificationAdapter):
+    #     def send_invite_to_client(self, message: str) -> None:
+    #         send_invite_to_client(message)
 
 
 @shared_task
@@ -21,5 +26,5 @@ def send_invite_to_client(message: str) -> None:
         f"{message}",
         "from@example.com",
         ["to@example.com"],
-        fail_silently=False,
+        fail_silently=True,
     )

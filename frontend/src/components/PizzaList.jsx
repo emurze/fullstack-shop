@@ -7,15 +7,15 @@ const PizzaList = () => {
     let [pizzas, setPizzas] = useState([])
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        fetch(backendOrigin + "/pizzas/")
-            .then((resp) => resp.json())
-            .then((resp) => {
-                setPizzas(resp)
-                setIsLoading(false)
-            })
-        window.scrollTo(0, 0) // TODO: fix  Test it
-    }, []) // FC runs when we firstly were showed on the page.
+    // useEffect(() => {
+    //     fetch(backendOrigin + "/pizzas/")
+    //         .then((resp) => resp.json())
+    //         .then((resp) => {
+    //             setPizzas(resp)
+    //             setIsLoading(false)
+    //         })
+    //     window.scrollTo(0, 0)
+    // }, [])
 
     return (
         <>

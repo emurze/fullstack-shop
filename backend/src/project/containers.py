@@ -7,7 +7,7 @@ from apps.notifications.services import NotificationService
 from apps.notifications.tasks import INotificationAdapter, NotificationAdapter
 from apps.products.repositories import ProductRepository, IProductRepository
 from apps.products.services import ProductService
-from seedwork.mediator import Mediator, BasicMediator
+from seedwork.mediator import Mediator
 from seedwork.uows import DjangoUnitOfWork, IUnitOfWork
 
 
@@ -36,19 +36,11 @@ class MainModule(Module):
     ) -> Mediator:
         return Mediator(uow=uow, container=container)
 
-    @singleton_provider
-    def provider_basic_mediator(
-        self,
-        mediator: Mediator,
-        container: Injector,
-    ) -> BasicMediator:
-        return BasicMediator(container, mediator.command_map)
-
 
 def _init_mediator(container: Injector) -> Mediator:
     mediator = container.get(Mediator)
-    mediator.register_service_commands(ProductService)
-    mediator.register_service_commands(NotificationService)
+    mediator.register_service(ProductService)
+    mediator.register_service(NotificationService)
     return mediator
 
 

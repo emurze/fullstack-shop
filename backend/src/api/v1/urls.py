@@ -1,8 +1,7 @@
 from django.urls import path, include
-
-
 from rest_framework.routers import SimpleRouter
 
+from api.v1.debug.views import DebugAPIView
 from api.v1.products.views import ProductModelViewSet
 
 main_router = SimpleRouter()
@@ -14,4 +13,5 @@ main_router.register(
 
 urlpatterns = [
     path("", include(main_router.urls)),
+    path("debug/", DebugAPIView.as_view(), name="debug"),
 ]

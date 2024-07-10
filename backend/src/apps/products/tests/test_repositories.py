@@ -6,7 +6,7 @@ from apps.products.repositories import IProductRepository, ProductRepository
 
 
 @pytest.mark.integration
-@pytest.mark.django_db(transaction=True, reset_sequences=True)
+@pytest.mark.django_db(transaction=True)
 class TestProductRepository:
     def setup_class(self) -> None:
         self.faker: Faker = Faker()

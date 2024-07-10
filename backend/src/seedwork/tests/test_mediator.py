@@ -1,135 +1,133 @@
 from dataclasses import dataclass
-from typing import Any
 
 import pytest
 from faker import Faker
 from injector import Injector
 
 from seedwork.exceptions import (
-    HandlerDoesNotHaveCommandsException,
-    ServiceDoesNotHaveInitMethodException,
     MissingFirstArgumentAnnotationException,
-    CommandIsNotDataClassException,
+    HandlerDoesNotHaveMessageException,
 )
-from seedwork.mediator import Mediator, command_handler
+from seedwork.mediator import Mediator
 from seedwork.uows import DjangoUnitOfWork
 
 
-@dataclass(frozen=True)
-class IChatService:
-    @command_handler
-    def add_message_to_client(self, command: Any) -> None:
-        print(f"Add message <{command}> to a client")
+@pytest.fixture(scope="function")
+def mediator() -> Mediator:
+    uow = DjangoUnitOfWork()
+    container = Injector()
+    mediator = Mediator(uow, container=container)
+    container.binder.bind(Mediator, to=mediator)
+    return mediator
 
 
-class TInventoryService:
+class NullTestMessage:
     pass
 
 
-class TNotificationService:
-    def __init__(self) -> None:
-        pass
-
-    @command_handler
-    def notify_client_about_credentials(self) -> None:
-        print("Notify client about credentials")
+class SayHelloTestMessage:
+    def __init__(self, title_: str) -> None:
+        self.title = title_
 
 
-@dataclass(frozen=True)
-class IDeliveryService:
-    @command_handler
-    def notify_client_about_credentials(self, command) -> None:
-        print(f"Deliver things to a client from {command=}")
+class NotificationTestService:
+    @staticmethod
+    def say_hello(message: SayHelloTestMessage) -> str:
+        return f"<{message.title}>"
+
+    def write(self, _: NullTestMessage) -> str:
+        return f"Write {type(self).__name__}"
 
 
 @dataclass(frozen=True)
-class TCreateProductCommand:
+class OrderPizzaTestMessage:
     title: str
 
 
 @dataclass(frozen=True)
-class TUpdateProductCommand:
-    title: str
-
-
-@dataclass(frozen=True)
-class TProductService:
+class OrderTestService:
     mediator: Mediator
 
-    @command_handler
-    def create_product(self, command: TCreateProductCommand) -> str:
-        return f"Product {command.title} created"
-
-    @command_handler
-    def update_product(self, command: TUpdateProductCommand) -> str:
-        return f"Product {command.title} updated"
+    def order_pizza(self, command: OrderPizzaTestMessage) -> tuple[str, str]:
+        result = self.mediator.basic_handle(SayHelloTestMessage(command.title))
+        return result, f"({command.title})"
 
 
-@dataclass(frozen=True)
-class TCreateOrderCommand:
-    name: str
-    product_id: int
+@pytest.mark.unit
+def test_can_register_two_services(mediator: Mediator) -> None:
+    # act
+    mediator.register_service(NotificationTestService)
+    mediator.register_service(OrderTestService)
 
 
-@dataclass(frozen=True)
-class TOrderService:
-    mediator: Mediator
+@pytest.mark.unit
+def test_can_handle_empty_message(mediator: Mediator) -> None:
+    # arrange
+    mediator.register_service(NotificationTestService)
 
-    @command_handler
-    def create_order(self, command: TCreateOrderCommand) -> tuple[str, str]:
-        res = self.mediator.handle(TCreateProductCommand(title=command.name))
-        return res, f"Order {command.name} created"
+    # act
+    res2 = mediator.basic_handle(NullTestMessage())
+
+    # assert
+    assert res2 == f"Write {NotificationTestService.__name__}"
 
 
-@pytest.mark.integration
-@pytest.mark.django_db(transaction=True, reset_sequences=True)
-class TestMediator:
-    def setup_class(self) -> None:
-        uow = DjangoUnitOfWork()
-        container = Injector()
-        mediator = Mediator(uow=uow, container=container)
-        container.binder.bind(Mediator, to=mediator)
+@pytest.mark.unit
+def test_service_can_call_another_service(
+    mediator: Mediator,
+    faker: Faker,
+) -> None:
+    # arrange
+    mediator.register_service(NotificationTestService)
+    mediator.register_service(OrderTestService)
 
-        self.container = container
-        self.mediator = mediator
-        self.faker = Faker()
+    # act
+    title = faker.text(max_nb_chars=30)
+    res = mediator.basic_handle(OrderPizzaTestMessage(title))
 
-    def test_can_register_command(self) -> None:
-        self.mediator.register_service_commands(TProductService)
+    # assert
+    assert res == (f"<{title}>", f"({title})")
 
-        title = self.faker.text(max_nb_chars=50)
-        command = TCreateProductCommand(title=title)
-        res = self.mediator.handle(command)
 
-        command2 = TUpdateProductCommand(title=title)
-        res2 = self.mediator.handle(command2)
+@pytest.mark.unit
+def test_can_register_handler(mediator: Mediator, faker: Faker) -> None:
+    # arrange
+    @dataclass(frozen=True)
+    class SayHelloCommand:
+        message: str
 
-        assert res == f"Product {command.title} created"
-        assert res2 == f"Product {command2.title} updated"
+    def say_hello(command: SayHelloCommand) -> str:
+        return f"<{command.message}>"
 
-    def test_can_register_two_services(self) -> None:
-        self.mediator.register_service_commands(TProductService)
-        self.mediator.register_service_commands(TOrderService)
+    mediator.register_handler(say_hello)
 
-        name = self.faker.text(max_nb_chars=50)
-        command = TCreateOrderCommand(name=name, product_id=1)
-        res1, res2 = self.mediator.handle(command)
+    # act
+    message = faker.text(max_nb_chars=30)
+    res = mediator.basic_handle(SayHelloCommand(message=message))
 
-        assert res1 == f"Product {command.name} created"
-        assert res2 == f"Order {command.name} created"
+    # assert
+    assert res == f"<{message}>"
 
-    def test_cannot_register_service_without_init(self) -> None:
-        with pytest.raises(ServiceDoesNotHaveInitMethodException):
-            self.mediator.register_service_commands(TInventoryService)
 
-    def test_cannot_register_service_without_command(self) -> None:
-        with pytest.raises(HandlerDoesNotHaveCommandsException):
-            self.mediator.register_service_commands(TNotificationService)
+@pytest.mark.unit
+def test_cannot_register_service_without_argument(mediator: Mediator) -> None:
+    # arrange
+    def verify_client() -> None:
+        print("Client is verified")
 
-    def test_cannot_register_service_without_command_annotation(self) -> None:
-        with pytest.raises(MissingFirstArgumentAnnotationException):
-            self.mediator.register_service_commands(IDeliveryService)
+    # act
+    with pytest.raises(HandlerDoesNotHaveMessageException):
+        mediator.register_handler(verify_client)
 
-    def test_cannot_register_service_with_wrong_annotation(self) -> None:
-        with pytest.raises(CommandIsNotDataClassException):
-            self.mediator.register_service_commands(IChatService)
+
+@pytest.mark.unit
+def test_cannot_register_handler_without_argument_annotation(
+    mediator: Mediator,
+) -> None:
+    # arrange
+    def send_credentials_to_client(command) -> None:
+        print(f"Client notified by <{command.message}>")
+
+    # act
+    with pytest.raises(MissingFirstArgumentAnnotationException):
+        mediator.register_handler(send_credentials_to_client)

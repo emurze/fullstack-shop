@@ -19,7 +19,7 @@ class CommandHandlerNotRegisteredException(ServiceException):
 
 
 @dataclass(eq=False)
-class HandlerDoesNotHaveCommandsException(ServiceException):
+class HandlerDoesNotHaveMessageException(ServiceException):
     func: Callable
 
     @property
@@ -27,15 +27,6 @@ class HandlerDoesNotHaveCommandsException(ServiceException):
         return (
             f"Command handler {self.func.__name__} doesn't have any commands"
         )
-
-
-@dataclass(eq=False)
-class ServiceDoesNotHaveInitMethodException(ServiceException):
-    service_type: type
-
-    @property
-    def message(self) -> str:
-        return f"Service <{self.service_type}> doesn't have __init__ method"
 
 
 @dataclass(eq=False)
@@ -48,12 +39,3 @@ class MissingFirstArgumentAnnotationException(ServiceException):
             f"Missing first argument annotation for command of "
             f"{self.func.__name__}"
         )
-
-
-@dataclass(eq=False)
-class CommandIsNotDataClassException(ServiceException):
-    func: Callable
-
-    @property
-    def message(self) -> str:
-        return f"Command for <{self.func.__name__}> is not dataclass"

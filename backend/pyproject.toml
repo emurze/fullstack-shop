@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "backend"
+name = "new-online-shop"
 version = "0.1.0"
 description = ""
 authors = ["Emurze <rozanov7475@yandex.by>"]
@@ -7,28 +7,51 @@ readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.10"
-dependency-injector = "^4.41.0"
-fastapi = {extras = ["uvicorn"], version = "^0.111.0"}
-pydantic = "^2.7.4"
-pydantic-settings = "^2.3.3"
-pytest = "^8.2.2"
-pytest-asyncio = "^0.23.7"
-aiofiles = "^24.1.0"
+python = "^3.12"
+django = "^5.0.6"
+uvicorn = "^0.30.1"
+django-rest-framework = "^0.1.0"
+django-filter = "^24.2"
+python-dotenv = "^1.0.1"
+injector = "^0.21.0"
+celery = "^5.4.0"
+psycopg2-binary = "^2.9.9"
+drf-spectacular = "^0.27.2"
+sentry-sdk = "^2.8.0"
 
 [tool.poetry.dev-dependencies]
 poethepoet = "^0.26.1"
+pytest = "^8.2.2"
+pytest-django = "^4.8.0"
+pytest-asyncio = "^0.23.7"
+pytest-mock = "^3.14.0"
+faker = "^26.0.0"
+black = "^24.4.2"
+
+[tool.poe.env]
+DC = "docker compose"
+EXEC = "docker exec -it"
+APP_CONTAINER = "main-app"
+PYTHONPATH = "src"
 
 [tool.poe.tasks]
-start = { shell = "cd src && uvicorn main:app --reload --port 8000 --host 0.0.0.0" }
-test  = { shell = "cd tests && pytest -s" }
+# celery -A project.celery_app worker --loglevel=info
+# uvicorn project.asgi:application --reload --host 0.0.0.0 --port 8080
+
+# Container
+up      = "$DC  up --build -d"
+logs    = "$DC logs -f $APP_CONTAINER"
+test    = "$EXEC $APP_CONTAINER pytest"
+shell   = "$EXEC $APP_CONTAINER bash"
+
+[tool.black]
+line-length = 79
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    "ignore::Warning:.*test class 'TestRunner'.*",
-    "ignore::DeprecationWarning:httpx.*"
-]
-addopts = ["-rsxX", "-l", "--tb=short", "--strict-markers"]
+DJANGO_SETTINGS_MODULE = "project.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+pythonpath = [".", "src"]
+addopts = ["-rsxX", "-l", "--tb=short", "--strict-markers", "-s"]
 xfail_strict = true
 cache_dir = ".venv/cache/pytest"
 asyncio_mode = "auto"
@@ -38,7 +61,7 @@ markers = [
     "e2e: marks tests as e2e tests i.e. using a client api and a database (deselect with '-m \"not e2e\"')",
     "marked: just marked"
 ]
-pythonpath = [".", "src"]
+
 
 [build-system]
 requires = ["poetry-core"]

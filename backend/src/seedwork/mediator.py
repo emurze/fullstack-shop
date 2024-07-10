@@ -1,34 +1,26 @@
 import inspect
 from collections.abc import Callable
-from dataclasses import is_dataclass
+from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
 from injector import Injector, inject
 
 from seedwork.exceptions import (
     CommandHandlerNotRegisteredException,
-    HandlerDoesNotHaveCommandsException,
+    HandlerDoesNotHaveMessageException,
     MissingFirstArgumentAnnotationException,
-    ServiceDoesNotHaveInitMethodException,
-    CommandIsNotDataClassException,
 )
 from seedwork.uows import IUnitOfWork
 
-Command: TypeAlias = Any
+Message: TypeAlias = Any
 
 
-def command_handler[TF](func: TF) -> TF:
-    func._is_command_handler = True
-    return func
-
-
-# TODO: provide behavior for static methods
 def get_first_argument_annotation(func: Callable) -> Any:
     signature = inspect.signature(func)
     parameters = list(signature.parameters.values())
 
     if not parameters:
-        raise HandlerDoesNotHaveCommandsException(func)
+        raise HandlerDoesNotHaveMessageException(func)
 
     first_param = parameters[0]
     annotation = first_param.annotation
@@ -38,67 +30,56 @@ def get_first_argument_annotation(func: Callable) -> Any:
     if annotation is inspect._empty:
         raise MissingFirstArgumentAnnotationException(func)
 
-    if not is_dataclass(annotation):
-        raise CommandIsNotDataClassException(func)
-
     return annotation
 
 
-class BasicMediator:
+@dataclass(frozen=True)
+class Mediator:
+    # TODO: Integrate celery in mediator
+    # EACH DELIVERY TASK SHOULD HAVE OWN TRANSACTION
+
+    uow: IUnitOfWork
     container: Injector
-    command_map: dict[type[Command], Callable]
+    message_map: dict[type[Message], Callable] = field(default_factory=dict)
 
-    def __init__(
-        self,
-        container: Injector,
-        command_map: dict | None = None,
-    ) -> None:
-        self.container = container
-        self.command_map = {} if command_map is None else command_map
+    def register_handler(self, handler: Callable) -> None:
+        message_type = get_first_argument_annotation(handler)
+        self.message_map[message_type] = handler
 
-    def register_command(
-        self,
-        command_type: type[Command],
-        _command_handler: Callable,
-    ) -> None:
-        self.command_map[command_type] = _command_handler
-
-    def register_service_commands(self, service_type: Any) -> None:
+    def register_service(self, service_class: Any) -> None:
         try:
-            service = self.container.get(inject(service_type))
+            service = self.container.get(inject(service_class))
         except AttributeError:
-            raise ServiceDoesNotHaveInitMethodException(service_type)
+            service = service_class()
 
+        functions = inspect.getmembers(service, inspect.isfunction)
         methods = inspect.getmembers(service, inspect.ismethod)
+        all_functions = functions + methods
 
-        for _, method in methods:
-            if not hasattr(method, "_is_command_handler"):
-                continue
+        for method_name, method in all_functions:
+            if not method_name.startswith("_"):
+                self.register_handler(method)
 
-            command_type = get_first_argument_annotation(method)
-            self.register_command(command_type, method)
+    def handle(self, message: Message) -> Any:
+        handler = self._get_handler(message)
 
-    @staticmethod
-    def execute_handler(handler: Callable, command: Command) -> Any:
-        return handler(command)
-
-    def handle(self, command: Command) -> Any:
-        command_type = type(command)
-        handler = self.command_map[command_type]
-
-        if not handler:
-            raise CommandHandlerNotRegisteredException(command_type)
-
-        return self.execute_handler(handler, command)
-
-
-class Mediator(BasicMediator):
-    def __init__(self, container: Injector, uow: IUnitOfWork) -> None:
-        super().__init__(container)
-        self.uow = uow
-
-    def execute_handler(self, handler: Callable, command: Command) -> Any:
         with self.uow:
-            res = handler(command)
+            # if is celery adapter
+            handler.delay(message)
+
+            res = handler(message)
             self.uow.commit()
             return res
+
+    def basic_handle(self, message: Message) -> Any:
+        handler = self._get_handler(message)
+        return handler(message)
+
+    def _get_handler(self, message: Message) -> Callable:
+        message_type = type(message)
+        handler = self.message_map[message_type]
+
+        if not handler:
+            raise CommandHandlerNotRegisteredException(message_type)
+
+        return handler

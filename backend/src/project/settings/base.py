@@ -17,6 +17,11 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
+    "apps.products.apps.ProductsConfig",
+    "apps.accounting.apps.AccountingConfig",
+    "apps.notifications.apps.NotificationsConfig",
+    "apps.base.apps.BaseConfig",
+    "apps.client.apps.ClientConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -27,7 +32,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "django_filters",
-    "apps.products.apps.ProductsConfig",
 ]
 
 MIDDLEWARE = [

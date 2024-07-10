@@ -13,11 +13,17 @@ from seedwork.mediator import Mediator
 
 @pytest.mark.integration
 @pytest.mark.django_db(transaction=True)
+def test_service_can_call_another_service_in_transaction() -> None:
+    pass
+
+
+@pytest.mark.integration
+@pytest.mark.django_db(transaction=True)
 class TestProductService:
     def setup_class(self) -> None:
         self.faker = Faker()
 
-    def test_can_create(  # TODO: find solution to decompose arguments to self
+    def test_can_create(
         self,
         mediator: Mediator,
         product_repo: IProductRepository,
@@ -53,7 +59,7 @@ class TestProductService:
 
         assert product_repo.count() == 0
 
-    def test_can_delete_nothing_quietly(
+    def test_can_delete_idempotently(
         self,
         mediator: Mediator,
         product_repo: IProductRepository,
@@ -77,3 +83,10 @@ class TestProductService:
 
         product = product_repo.get_by_id(product_id)
         assert product.title == new_title
+
+    def test_can_update_idempotently(
+        self,
+        mediator: Mediator,
+        product_repo: IProductRepository,
+    ) -> None:
+        pass

@@ -8,10 +8,29 @@ services:
       - pizza.backend
     ports:
       - '8000:8000'
+    env_file:
+      - backend/.env
     volumes:
       - ./backend/src:/service/src
       - ./backend/tests:/service/tests
     restart: unless-stopped
 
+  db:
+    build: config/db
+    container_name: db
+    image: emurze/postgres:16
+    networks:
+      - backend
+    ports:
+      - '5432:5432'
+    env_file:
+      - backend/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
 networks:
   pizza.backend:
+
+volumes:
+  postgres_data:

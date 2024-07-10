@@ -1,11 +1,17 @@
-# Data
+# [Pycharm]
+*.idea
+.idea
 
-*htmlcov*
+# django
+static
+media
+
 
 # venv
-.venv
+*venv
 venv
 *.env
+.env
 *my_venv
 my_venv
 *my_env
@@ -136,9 +142,11 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-*.venv
+.env
+.venv
+.env/
 venv/
-backend/.env/
+.env/
 env.bak/
 venv.bak/
 

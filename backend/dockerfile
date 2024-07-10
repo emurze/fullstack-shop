@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.11
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONNUNBUFFERED=1
@@ -12,7 +12,7 @@ ENV POETRY_NO_INTERACTION=1 \
 
 WORKDIR /service/
 
-COPY .env .
+COPY setup.cfg .
 COPY poetry.lock .
 COPY pyproject.toml .
 
@@ -23,5 +23,5 @@ COPY tests tests
 
 RUN poetry install
 
-EXPOSE 8000
-CMD ["poetry", "run", "poe", "start"]
+EXPOSE 8080
+CMD uvicorn main:app --host 0.0.0.0 --port 8080 --reload --lifespan off
