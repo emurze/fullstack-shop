@@ -34,22 +34,22 @@ services:
       - cache_data:/data
     restart: unless-stopped
 
-#  api:
-#    build: .
-#    container_name: '$APP_NAME.api'
-#    image: '${APP_NAME}.api:1'
-#    env_file: .env
-#    networks:
-#      - $APP_NAME.backend
-#    ports:
-#      - '8081:8080'
-#    volumes:
-#      - ./src:/service/src
-#      - $APP_NAME.app_static:/service/src/shared/infra/django/data/static
-#      - $APP_NAME.app_media:/service/src/shared/infra/django/data/media
-#    restart: unless-stopped
-#    depends_on:
-#      - db with healthcheck
+  api:
+    build: .
+    container_name: '$APP_NAME.api'
+    image: '${APP_NAME}.api:1'
+    env_file: .env
+    networks:
+      - backend
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./src:/service/src
+      - app_static:/service/static
+      - app_media:/service/media
+    restart: unless-stopped
+    depends_on:
+      - db  # healthcheck
 
 #  web_server:
 #    image: 'nginx:alpine3.18'
@@ -65,17 +65,6 @@ services:
 #    restart: unless-stopped
 #    depends_on:
 #      - api
-
-#  cache:
-#    image: 'redis:7'
-#    container_name: '$APP_NAME.cache'
-#    command: redis-server /etc/redis.conf
-#    networks:
-#      - $APP_NAME.backend
-#    volumes:
-#      - $APP_NAME.cache_data:/data
-#      - ./src/shared/infra/redis/cache/conf/redis.conf:/etc/redis.conf
-#    restart: unless-stopped
 
 #  worker1:
 #    build: .
@@ -102,5 +91,5 @@ volumes:
   postgres_data:
   broker_data:
   cache_data:
-#  $APP_NAME.app_static:
-#  $APP_NAME.app_media:
+  app_static:
+  app_media:

@@ -1,27 +1,32 @@
-FROM python:3.11
+FROM python:3.12.1-slim-bullseye
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONNUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-RUN pip3 install poetry
+WORKDIR /service
 
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+RUN apt update -y && \
+    apt install -y python3-dev \
+    gcc \
+    musl-dev \
+    libpq-dev \
+    nmap
 
-WORKDIR /service/
-
-COPY setup.cfg .
-COPY poetry.lock .
 COPY pyproject.toml .
 
-RUN poetry install --no-root && rm -rf $POETRY_CACHE_DIR
+RUN pip install --upgrade pip
+RUN pip install poetry
+
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-root --no-interaction --no-ansi
 
 COPY src src
-COPY tests tests
-
-RUN poetry install
+COPY manage.py .
 
 EXPOSE 8080
-CMD uvicorn main:app --host 0.0.0.0 --port 8080 --reload --lifespan off
+
+CMD sh -c 'poetry run python3 manage.py migrate --no-input && \
+           poetry run python3 manage.py createadmin && \
+           poetry run python3 manage.py collectstatic --noinput && \
+           poetry run python3 manage.py runserver 0.0.0.0:8080'
+# CMD python manage.py migrate && uvicorn project.asgi:application --reload --host 0.0.0.0 --port 8080 --lifespan off
